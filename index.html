@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aventura de Adivinanzas — Isabella</title>
+  <meta name="description" content="Juego de preguntas y respuestas con álbum de premios.">
+  <style>
+:root{
+  --accent: #f472b6;
+  --bg: #fff9f0;
+  --card: #ffffff;
+  --ink: #1f2937;
+  --muted: #6b7280;
+  --good: #16a34a;
+  --bad: #dc2626;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;font-family:ui-rounded, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, 'Helvetica Neue', Arial, 'Apple Color Emoji','Segoe UI Emoji'; background:var(--bg); color:var(--ink)}
+.container{max-width:920px;margin:0 auto;padding:16px 16px 72px}
+.header{display:flex;gap:12px;align-items:center;margin:12px 0 8px}
+.badge{background:var(--accent);color:white;padding:6px 12px;border-radius:999px;font-weight:700;box-shadow:0 4px 18px rgba(0,0,0,.08)}
+.title{font-size:28px;margin:4px 0 0}
+.card{background:var(--card);border-radius:18px;box-shadow:0 6px 24px rgba(0,0,0,.08);padding:16px;margin-top:12px}
+.progress{height:10px;background:#f3f4f6;border-radius:999px;overflow:hidden;margin:8px 0 0}
+.progress > div{height:100%;background:var(--accent);width:0%;transition:width .35s ease}
+.q{font-size:20px;margin:0}
+.options{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}
+button.option{padding:12px 14px;border:2px solid #e5e7eb;background:white;border-radius:14px;font-size:16px;text-align:left;cursor:pointer;transition:.2s}
+button.option:hover{transform:translateY(-1px)}
+button.option.correct{border-color:var(--good);outline:3px solid rgba(22,163,74,.2)}
+button.option.wrong{border-color:var(--bad);outline:3px solid rgba(220,38,38,.2)}
+.controls{display:flex;gap:10px;margin-top:12px}
+.btn{padding:10px 14px;border:none;border-radius:12px;background:var(--accent);color:white;font-weight:700;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.12);transition:.2s}
+.btn[disabled]{opacity:.6;cursor:not-allowed;box-shadow:none}
+.input{width:100%;padding:12px 14px;border:2px solid #e5e7eb;border-radius:12px;font-size:16px;margin-top:10px}
+.small{color:var(--muted);font-size:13px;margin-top:8px}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill, minmax(140px,1fr));gap:10px}
+.gallery figure{margin:0;background:white;border-radius:16px;overflow:hidden;border:2px dashed var(--accent);}
+.gallery img{width:100%;height:140px;object-fit:cover;display:block}
+.gallery figcaption{text-align:center;padding:6px 8px;font-size:13px;color:var(--muted)}
+.footer{position:fixed;left:0;right:0;bottom:0;background:linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,1) 24%);padding:10px 16px}
+.footer .bar{background:white;border:1px solid #e5e7eb;border-radius:16px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.kid-emoji{font-size:22px}
+.hidden{display:none}
+.confetti{position:fixed;left:0;top:0;width:100%;height:0;pointer-events:none;overflow:visible}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="badge" id="badge">Isabella</div>
+      <h1 class="title" id="pageTitle">Aventura de Adivinanzas — Isabella</h1>
+      <div class="kid-emoji" aria-hidden="true">👧</div>
+    </div>
+
+    <div class="card" id="qcard">
+      <div class="progress"><div></div></div>
+      <p class="small">Progreso: <strong id="progreso">0/0</strong> • Aciertos: <strong id="aciertos">0</strong></p>
+      <h2 class="q" id="qtext"></h2>
+      <div class="options" id="options"></div>
+
+      <div id="answerRow" class="hidden">
+        <input id="answer" class="input" type="text" placeholder="Escribe tu respuesta…">
+        <div class="controls">
+          <button id="checkBtn" class="btn" onclick="checkText()">Comprobar</button>
+        </div>
+      </div>
+
+      <p id="feedback" class="small"></p>
+    </div>
+
+    <div class="card">
+      <h3>Álbum de premios desbloqueados</h3>
+      <p class="small">Cada respuesta correcta revela una foto sorpresa 📸</p>
+      <div id="galeria" class="gallery"></div>
+    </div>
+
+    <div id="final" class="card hidden">
+      <h2 id="finalMsg">¡Álbum desbloqueado!</h2>
+      <p id="stats" class="small"></p>
+      <button class="btn" onclick="location.reload()">Jugar de nuevo</button>
+    </div>
+
+    <div class="footer">
+      <div class="bar"><span>Edita CONFIG para poner tus 15 preguntas y fotos.</span></div>
+    </div>
+  </div>
+
+<script>
+const CONFIG = {
+  title: "Aventura de Adivinanzas — Isabella",
+  badge: "Isabella",
+  accent: "#f472b6",
+  questions: [
+    { type:"mc", q:"Pregunta 1", options:["A","B","C"], answerIndex:0 },
+    { type:"text", q:"Pregunta 2", answerText:["respuesta"] },
+    { type:"mc", q:"Pregunta 3", options:["A","B","C"], answerIndex:1 },
+    { type:"mc", q:"Pregunta 4", options:["A","B","C"], answerIndex:2 },
+    { type:"text", q:"Pregunta 5", answerText:["respuesta"] },
+    { type:"mc", q:"Pregunta 6", options:["A","B","C"], answerIndex:0 },
+    { type:"text", q:"Pregunta 7", answerText:["respuesta"] },
+    { type:"mc", q:"Pregunta 8", options:["A","B","C"], answerIndex:1 },
+    { type:"mc", q:"Pregunta 9", options:["A","B","C"], answerIndex:2 },
+    { type:"text", q:"Pregunta 10", answerText:["respuesta"] },
+    { type:"mc", q:"Pregunta 11", options:["A","B","C"], answerIndex:0 },
+    { type:"text", q:"Pregunta 12", answerText:["respuesta"] },
+    { type:"mc", q:"Pregunta 13", options:["A","B","C"], answerIndex:1 },
+    { type:"mc", q:"Pregunta 14", options:["A","B","C"], answerIndex:2 },
+    { type:"text", q:"Pregunta 15", answerText:["respuesta"] }
+  ],
+  prizes: [
+    "premios/nina/1.jpg","premios/nina/2.jpg","premios/nina/3.jpg",
+    "premios/nina/4.jpg","premios/nina/5.jpg"
+  ]
+};
+</script>
+<script>
+/* === LÓGICA DEL JUEGO === (igual al de Alan) */
+const state = { i:0, correctas:0, reveladas:0, total: CONFIG.questions.length };
+const $ = (s)=>document.querySelector(s), $$=(s)=>[...document.querySelectorAll(s)];
+function normalize(s){return(s||'').toString().normalize('NFD').replace(/\p{Diacritic}/gu,'').trim().toLowerCase();}
+function setProgress(){const pct=Math.round(state.i/state.total*100);$('.progress>div').style.width=pct+'%';$('#progreso').textContent=state.i+'/'+state.total;$('#aciertos').textContent=state.correctas;}
+function renderQuestion(){if(state.i>=state.total){endGame();return;}const q=CONFIG.questions[state.i];$('#qtext').textContent=q.q;$('#options').innerHTML='';$('#answerRow').classList.add('hidden');if(q.type==='mc'){q.options.forEach((op,idx)=>{const b=document.createElement('button');b.className='option';b.textContent=op;b.onclick=()=>checkMC(idx);$('#options').appendChild(b);});}else{$('#answerRow').classList.remove('hidden');$('#answer').value='';}}
+function celebrate(){const c=document.createElement('canvas');c.className='confetti';c.width=innerWidth;c.height=200;document.body.appendChild(c);const ctx=c.getContext('2d');const pcs=Array.from({length:120},()=>({x:Math.random()*c.width,y:-20-Math.random()*100,vy:2+Math.random()*3,s:6+Math.random()*6,r:Math.random()*Math.PI,vr:(Math.random()-.5)*0.2}));let t=0;!function tick(){t++;ctx.clearRect(0,0,c.width,c.height);pcs.forEach(p=>{p.y+=p.vy;p.r+=p.vr;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.r);ctx.fillStyle=['#f59e0b','#10b981','#3b82f6','#ef4444','#8b5cf6'][Math.floor(Math.random()*5)];ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s);ctx.restore();});if(t<120)requestAnimationFrame(tick);else c.remove();}();}
+function revealPrize(){if(state.reveladas>=CONFIG.prizes.length)return;const src=CONFIG.prizes[state.reveladas];const f=document.createElement('figure');const i=document.createElement('img');i.src=src;f.appendChild(i);$('#galeria').appendChild(f);state.reveladas++;}
+function next(){state.i++;renderQuestion();setProgress();}
+function checkMC(idx){const q=CONFIG.questions[state.i];const ok=idx===q.answerIndex;if(ok){state.correctas++;revealPrize();celebrate();}next();}
+function checkText(){const q=CONFIG.questions[state.i];const val=normalize($('#answer').value);const ans=Array.isArray(q.answerText)?q.answerText.map(normalize):[normalize(q.answerText)];if(ans.includes(val)){state.correctas++;revealPrize();celebrate();}next();}
+function endGame(){$('.progress>div').style.width='100%';$('#progreso').textContent=state.total+'/'+state.total;$('#qcard').classList.add('hidden');$('#final').classList.remove('hidden');$('#stats').textContent=`Aciertos: ${state.correctas}/${state.total}`;}
+function init(){document.title=CONFIG.title;$('#badge').textContent=CONFIG.badge;$('#pageTitle').textContent=CONFIG.title;document.documentElement.style.setProperty('--accent',CONFIG.accent);renderQuestion();setProgress();}
+window.onload=init;
+</script>
+</body>
+</html>

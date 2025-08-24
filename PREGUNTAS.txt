@@ -22,3 +22,5 @@ Sopo
 Rosa Emilse Morales Giraldo
 11. ¿Cuando fue la ultima vez que tu tio fue a Colombia a visitarlos? - "Pon la fecha, solo el mes y el año mm/aaaa"...
 10/2024
+12. ¿Cuantos años tienen los tios San y Dani? - "Pon un numero, luego coma (,) y despues el otro numero"
+31, 

@@ -1,0 +1,10 @@
+1. Vamos a empezar facil ¿Como se llama tu padrino? "El nombre completo"...
+Gabriel Alexander Celis Morales
+2. ¿Cuantos años tiene tu padrino-tio? "Solo pon el numero"...
+35
+3. ¿Cuantos tios tienes en total? "Cuenta todos los hermanos de los papas" - TODOS, TODOS...
+5. ¿Cuales son los nombres de tus primos? - "Solo el Primer Nombre de cada uno, separado por comas" - "Primero las Damas"
+Abby, Alejandro
+6. 
+7. ¿Cuando es el cumpleaños de tu padrino? - Tienes que poner la fecha dd/mm/aaaa
+10/11/1989

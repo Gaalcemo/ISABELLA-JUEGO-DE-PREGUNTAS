@@ -43,9 +43,6 @@ button.option.wrong{border-color:var(--bad);outline:3px solid rgba(220,38,38,.2)
 .gallery img, .gallery video{width:100%;height:320px;object-fit:cover;display:block;background:#000}
 .gallery figcaption{text-align:center;padding:6px 8px;font-size:14px;color:var(--muted)}
 
-.footer{position:fixed;left:0;right:0;bottom:0;background:linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,1) 24%);padding:10px 16px}
-.footer .bar{background:white;border:1px solid #e5e7eb;border-radius:16px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
-.kid-emoji{font-size:22px}
 .hidden{display:none}
 .confetti{position:fixed;left:0;top:0;width:100%;height:0;pointer-events:none;overflow:visible}
   </style>
@@ -80,7 +77,7 @@ button.option.wrong{border-color:var(--bad);outline:3px solid rgba(220,38,38,.2)
 
     <div class="card">
       <h3>PREMIOS DESBLOQUEADOS</h3>
-      <p class="small">Cada respuesta correcta revela sorpresa 📸🎬</p>
+      <p class="small">Cada respuesta correcta revela una sorpresa 📸🎬</p>
       <div id="galeria" class="gallery"></div>
     </div>
 
@@ -90,16 +87,12 @@ button.option.wrong{border-color:var(--bad);outline:3px solid rgba(220,38,38,.2)
       <div id="finalExtra"></div>
       <button class="btn" onclick="location.reload()">Jugar de nuevo</button>
     </div>
-
-    <div class="footer">
-      <div class="bar"><span>Tip: las preguntas y premios están en la sección CONFIG (abajo del archivo).</span></div>
-    </div>
   </div>
 
 <script>
 /* ======== CONFIGURACIÓN =========
-   Tipos de pregunta: 
-   { type:'text', q:'...', answerText:['respuesta1','respuesta2'] }  // sin acentos/mayúsculas
+   Tipos:
+   { type:'text', q:'...', answerText:['respuesta1','respuesta2'] }
    (Opcional) { type:'mc', q:'...', options:['A','B','C'], answerIndex:1 }
    Cada premio puede tener varias imágenes y/o videos:
    { media: [ {type:'image'|'video', src:'...'}, ... ], caption:'mensaje' }
@@ -176,9 +169,13 @@ const CONFIG = {
 
 <script>
 /* ======== LÓGICA ======== */
-const state = { i:0, correctas:0, reveladas:0, total: CONFIG.questions.length };
+const state = {
+  i: 0,
+  correctas: 0,
+  total: CONFIG.questions.length,
+  revealedByIndex: Array(CONFIG.questions.length).fill(false) // para no duplicar premios
+};
 const $ = (sel) => document.querySelector(sel);
-const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
 function normalize(s){
   return (s||'').toString()
@@ -201,7 +198,7 @@ function renderQuestion(){
   $('#options').innerHTML = '';
   $('#answerRow').classList.add('hidden');
   $('#feedback').textContent = '';
-  $('#nextRow').classList.add('hidden'); // SIEMPRE oculto al renderizar
+  $('#nextRow').classList.add('hidden'); // oculto siempre al renderizar
 
   if(q.type === 'mc'){
     q.options.forEach((op,idx)=>{
@@ -245,8 +242,9 @@ function celebrate(){
   })();
 }
 
-function addMediaToGallery(item){
-  // item: { media: [{type:'image'|'video', src:'...'}...], caption: '...' }
+/* Inserta un item de premio al inicio de la galería (para que el último correcto se vea primero) */
+function prependPrizeToGallery(item){
+  const container = document.getElementById('galeria');
   item.media.forEach(m=>{
     const fig = document.createElement('figure');
     if(m.type === 'video'){
@@ -264,39 +262,45 @@ function addMediaToGallery(item){
     const cap = document.createElement('figcaption');
     cap.textContent = item.caption || '¡Premio desbloqueado!';
     fig.appendChild(cap);
-    $('#galeria').appendChild(fig);
+    container.prepend(fig); // ← insertar al principio
   });
 }
 
-function revealPrize(){
-  if(state.reveladas >= CONFIG.prizes.length) return;
-  const prize = CONFIG.prizes[state.reveladas];
-  addMediaToGallery(prize);
-  state.reveladas++;
+/* Revela el premio que corresponde a la pregunta con índice qIndex */
+function revealPrizeFor(qIndex){
+  if(state.revealedByIndex[qIndex]) return; // ya revelado
+  const prize = CONFIG.prizes[qIndex];
+  if(!prize) return;
+  prependPrizeToGallery(prize);
+  state.revealedByIndex[qIndex] = true;
 }
 
-/* === Respuesta de opción múltiple: marcar correcto/incorrecto y permitir reintentar === */
+/* Opción múltiple */
 function checkMC(btn, idx){
   const q = CONFIG.questions[state.i];
   const ok = idx === q.answerIndex;
   if(ok){
+    // desactivar todas las opciones para evitar doble click
+    document.querySelectorAll('#options .option').forEach(b=>b.disabled = true);
     btn.classList.add('correct');
     handleCorrect();
   }else{
     btn.classList.add('wrong');
-    // No mostramos "Siguiente"; puede intentar otra opción
     $('#feedback').textContent = '¡Casi! Intenta de nuevo.';
     $('#feedback').style.color = 'var(--bad)';
   }
 }
 
-/* === Respuesta abierta: permitir reintentos hasta acertar === */
+/* Respuesta abierta */
 function checkText(){
   const q = CONFIG.questions[state.i];
   const val = normalize($('#answer').value);
   const ans = Array.isArray(q.answerText) ? q.answerText.map(normalize) : [normalize(q.answerText)];
   const ok = ans.includes(val);
   if(ok){
+    // bloquear input y botón para que no vuelva a enviar
+    $('#answer').disabled = true;
+    document.getElementById('checkBtn').disabled = true;
     handleCorrect();
   }else{
     $('#feedback').textContent = 'No es exacto aún, ¡prueba otra vez!';
@@ -305,19 +309,23 @@ function checkText(){
   }
 }
 
-/* === Al acertar: premia, confeti, muestra botón "Siguiente" === */
+/* Al acertar: premia de la misma pregunta, confeti y muestra "Siguiente" */
 function handleCorrect(){
   state.correctas++;
-  revealPrize();
+  revealPrizeFor(state.i); // ← premio N para pregunta N
   celebrate();
   $('#feedback').textContent = '¡Correcto! 🎉';
   $('#feedback').style.color = 'var(--good)';
   setProgress();
-  // Mostrar "Siguiente" SOLO cuando acierta
   document.getElementById('nextRow').classList.remove('hidden');
 }
 
 function nextQuestion(){
+  // reactivar input si se había bloqueado
+  const ans = document.getElementById('answer');
+  const chk = document.getElementById('checkBtn');
+  if(ans){ ans.disabled = false; }
+  if(chk){ chk.disabled = false; }
   state.i++;
   renderQuestion();
 }
@@ -346,6 +354,7 @@ function init(){
   $('#badge').textContent = CONFIG.badge;
   $('#pageTitle').textContent = CONFIG.title;
   document.documentElement.style.setProperty('--accent', CONFIG.accent);
+  setProgress();
   renderQuestion();
 }
 
@@ -353,4 +362,3 @@ window.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>
-

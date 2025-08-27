@@ -36,10 +36,13 @@ button.option.wrong{border-color:var(--bad);outline:3px solid rgba(220,38,38,.2)
 .btn[disabled]{opacity:.6;cursor:not-allowed;box-shadow:none}
 .input{width:100%;padding:12px 14px;border:2px solid #e5e7eb;border-radius:12px;font-size:16px;margin-top:10px}
 .small{color:var(--muted);font-size:13px;margin-top:8px}
-.gallery{display:grid;grid-template-columns:repeat(auto-fill, minmax(160px,1fr));gap:12px}
+
+/* GALERÍA: tamaño doble (320px alto) */
+.gallery{display:grid;grid-template-columns:repeat(auto-fill, minmax(320px,1fr));gap:16px}
 .gallery figure{margin:0;background:white;border-radius:16px;overflow:hidden;border:2px dashed var(--accent);}
-.gallery img, .gallery video{width:100%;height:160px;object-fit:cover;display:block;background:#000}
-.gallery figcaption{text-align:center;padding:6px 8px;font-size:13px;color:var(--muted)}
+.gallery img, .gallery video{width:100%;height:320px;object-fit:cover;display:block;background:#000}
+.gallery figcaption{text-align:center;padding:6px 8px;font-size:14px;color:var(--muted)}
+
 .footer{position:fixed;left:0;right:0;bottom:0;background:linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,1) 24%);padding:10px 16px}
 .footer .bar{background:white;border:1px solid #e5e7eb;border-radius:16px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .kid-emoji{font-size:22px}
@@ -70,10 +73,13 @@ button.option.wrong{border-color:var(--bad);outline:3px solid rgba(220,38,38,.2)
       </div>
 
       <p id="feedback" class="small"></p>
+      <div class="controls hidden" id="nextRow">
+        <button id="nextBtn" class="btn" onclick="nextQuestion()">Siguiente ➡️</button>
+      </div>
     </div>
 
     <div class="card">
-      <h3>Álbum de premios desbloqueados</h3>
+      <h3>PREMIOS DESBLOQUEADOS</h3>
       <p class="small">Cada respuesta correcta revela una foto o video sorpresa 📸🎬</p>
       <div id="galeria" class="gallery"></div>
     </div>
@@ -91,11 +97,11 @@ button.option.wrong{border-color:var(--bad);outline:3px solid rgba(220,38,38,.2)
 
 <script>
 /* ======== CONFIGURACIÓN =========
- - Tipos de pregunta soportados:
-   { type: 'mc', q: '¿Pregunta?', options: ['A','B','C'], answerIndex: 1 }
-   { type: 'text', q: '¿Pregunta abierta?', answerText: ['respuesta1','respuesta2'] } // sin acentos/mayúsculas
- - Cada premio puede tener varias imágenes y/o videos:
-   { media: [ {type:'image', src:'...'}, {type:'video', src:'...'} ], caption:'mensaje' }
+   Tipos de pregunta: 
+   { type:'text', q:'...', answerText:['respuesta1','respuesta2'] }  // no sensible a mayúsculas/acentos
+   También soporta 'mc' con opciones si quisieras mezclar.
+   Cada premio puede tener varias imágenes y/o videos:
+   { media: [ {type:'image'|'video', src:'...'}, ... ], caption:'mensaje' }
 */
 const CONFIG = {
   title: "Aventura de Adivinanzas — Isabella",
@@ -120,7 +126,6 @@ const CONFIG = {
     { type: "text", q: "15. Piensa en la razón más importante para estar viva, piensa en Aquel que todo lo puede y siempre está contigo… Escríbelo aquí (PISTA: 4 letras)", answerText: ["Dios","DIOS"] }
   ],
 
-  // URLs en modo RAW para que carguen como archivos directos
   prizes: [
     { media: [ {type:'image', src:'https://raw.githubusercontent.com/Gaalcemo/ISABELLA-JUEGO-DE-PREGUNTAS/main/IMG_20230805_182026.jpg'} ], caption: "Recuerda que tienes un tío loco que te ama" },
     { media: [ {type:'image', src:'https://raw.githubusercontent.com/Gaalcemo/ISABELLA-JUEGO-DE-PREGUNTAS/main/IMG_20230805_131736.jpg'} ], caption: "Siempre has sido muy valiente y aventurera" },
@@ -175,14 +180,14 @@ const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
 function normalize(s){
   return (s||'').toString()
-    .normalize('NFD').replace(/\p{Diacritic}/gu,'')
-    .replace(/\s*,\s*/g, ',')   // normaliza comas
+    .normalize('NFD').replace(/\p{Diacritic}/gu,'') // sin acentos
+    .replace(/\s*,\s*/g, ',')                        // comas normalizadas
     .trim().toLowerCase();
 }
 
 function setProgress(){
   const pct = Math.round((state.i) / state.total * 100);
-  $('.progress > div').style.width = pct + '%';
+  document.querySelector('.progress > div').style.width = pct + '%';
   $('#progreso').textContent = state.i + '/' + state.total;
   $('#aciertos').textContent = state.correctas;
 }
@@ -193,6 +198,9 @@ function renderQuestion(){
   $('#qtext').textContent = q.q;
   $('#options').innerHTML = '';
   $('#answerRow').classList.add('hidden');
+  $('#feedback').textContent = '';
+  $('#nextRow').classList.add('hidden');
+
   if(q.type === 'mc'){
     q.options.forEach((op,idx)=>{
       const btn = document.createElement('button');
@@ -265,11 +273,6 @@ function revealPrize(){
   state.reveladas++;
 }
 
-function nextQuestion(){
-  state.i++;
-  renderQuestion();
-}
-
 function checkMC(idx){
   const q = CONFIG.questions[state.i];
   const ok = idx === q.answerIndex;
@@ -296,11 +299,17 @@ function feedback(ok){
     $('#feedback').style.color = 'var(--bad)';
   }
   setProgress();
-  setTimeout(nextQuestion, 900);
+  // Avanza solo cuando el usuario pulse "Siguiente"
+  document.getElementById('nextRow').classList.remove('hidden');
+}
+
+function nextQuestion(){
+  state.i++;
+  renderQuestion();
 }
 
 function endGame(){
-  $('.progress > div').style.width = '100%';
+  document.querySelector('.progress > div').style.width = '100%';
   $('#progreso').textContent = state.total + '/' + state.total;
   $('#qcard').classList.add('hidden');
   $('#final').classList.remove('hidden');

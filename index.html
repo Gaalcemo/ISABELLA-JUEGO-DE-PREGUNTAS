@@ -17,10 +17,11 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;font-family:ui-rounded, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, 'Helvetica Neue', Arial, 'Apple Color Emoji','Segoe UI Emoji'; background:var(--bg); color:var(--ink)}
-.container{max-width:920px;margin:0 auto;padding:16px 16px 72px}
-.header{display:flex;gap:12px;align-items:center;margin:12px 0 8px}
+.container{max-width:980px;margin:0 auto;padding:16px 16px 92px}
+.header{display:flex;gap:12px;align-items:center;margin:12px 0 4px}
 .badge{background:var(--accent);color:white;padding:6px 12px;border-radius:999px;font-weight:700;box-shadow:0 4px 18px rgba(0,0,0,.08)}
 .title{font-size:28px;margin:4px 0 0}
+.notice{background:#fff;border:2px dashed var(--accent);border-radius:14px;padding:10px 12px;font-size:14px;color:#6b7280}
 .card{background:var(--card);border-radius:18px;box-shadow:0 6px 24px rgba(0,0,0,.08);padding:16px;margin-top:12px}
 .progress{height:10px;background:#f3f4f6;border-radius:999px;overflow:hidden;margin:8px 0 0}
 .progress > div{height:100%;background:var(--accent);width:0%;transition:width .35s ease}
@@ -35,9 +36,9 @@ button.option.wrong{border-color:var(--bad);outline:3px solid rgba(220,38,38,.2)
 .btn[disabled]{opacity:.6;cursor:not-allowed;box-shadow:none}
 .input{width:100%;padding:12px 14px;border:2px solid #e5e7eb;border-radius:12px;font-size:16px;margin-top:10px}
 .small{color:var(--muted);font-size:13px;margin-top:8px}
-.gallery{display:grid;grid-template-columns:repeat(auto-fill, minmax(140px,1fr));gap:10px}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill, minmax(160px,1fr));gap:12px}
 .gallery figure{margin:0;background:white;border-radius:16px;overflow:hidden;border:2px dashed var(--accent);}
-.gallery img{width:100%;height:140px;object-fit:cover;display:block}
+.gallery img, .gallery video{width:100%;height:160px;object-fit:cover;display:block;background:#000}
 .gallery figcaption{text-align:center;padding:6px 8px;font-size:13px;color:var(--muted)}
 .footer{position:fixed;left:0;right:0;bottom:0;background:linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,1) 24%);padding:10px 16px}
 .footer .bar{background:white;border:1px solid #e5e7eb;border-radius:16px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
@@ -53,6 +54,7 @@ button.option.wrong{border-color:var(--bad);outline:3px solid rgba(220,38,38,.2)
       <h1 class="title" id="pageTitle">Aventura de Adivinanzas — Isabella</h1>
       <div class="kid-emoji" aria-hidden="true">👧</div>
     </div>
+    <p class="notice">EN ESTE JUEGO PUEDES RECIBIR AYUDA DE TUS PAPÁS PERO <strong>MUY POQUITO</strong>; LA IDEA ES QUE JUEGUES TÚ 💪😉</p>
 
     <div class="card" id="qcard">
       <div class="progress"><div></div></div>
@@ -72,7 +74,7 @@ button.option.wrong{border-color:var(--bad);outline:3px solid rgba(220,38,38,.2)
 
     <div class="card">
       <h3>Álbum de premios desbloqueados</h3>
-      <p class="small">Cada respuesta correcta revela una foto sorpresa 📸</p>
+      <p class="small">Cada respuesta correcta revela una foto o video sorpresa 📸🎬</p>
       <div id="galeria" class="gallery"></div>
     </div>
 
@@ -83,53 +85,238 @@ button.option.wrong{border-color:var(--bad);outline:3px solid rgba(220,38,38,.2)
     </div>
 
     <div class="footer">
-      <div class="bar"><span>Edita CONFIG para poner tus 15 preguntas y fotos.</span></div>
+      <div class="bar"><span>Tip: las preguntas y premios están en la sección CONFIG (abajo del archivo).</span></div>
     </div>
   </div>
 
 <script>
+/* ======== CONFIGURACIÓN =========
+ - Tipos de pregunta soportados:
+   { type: 'mc', q: '¿Pregunta?', options: ['A','B','C'], answerIndex: 1 }
+   { type: 'text', q: '¿Pregunta abierta?', answerText: ['respuesta1','respuesta2'] } // sin acentos/mayúsculas
+ - Cada premio puede tener varias imágenes y/o videos:
+   { media: [ {type:'image', src:'...'}, {type:'video', src:'...'} ], caption:'mensaje' }
+*/
 const CONFIG = {
   title: "Aventura de Adivinanzas — Isabella",
   badge: "Isabella",
   accent: "#f472b6",
+
   questions: [
-    { type:"mc", q:"Pregunta 1", options:["A","B","C"], answerIndex:0 },
-    { type:"text", q:"Pregunta 2", answerText:["respuesta"] },
-    { type:"mc", q:"Pregunta 3", options:["A","B","C"], answerIndex:1 },
-    { type:"mc", q:"Pregunta 4", options:["A","B","C"], answerIndex:2 },
-    { type:"text", q:"Pregunta 5", answerText:["respuesta"] },
-    { type:"mc", q:"Pregunta 6", options:["A","B","C"], answerIndex:0 },
-    { type:"text", q:"Pregunta 7", answerText:["respuesta"] },
-    { type:"mc", q:"Pregunta 8", options:["A","B","C"], answerIndex:1 },
-    { type:"mc", q:"Pregunta 9", options:["A","B","C"], answerIndex:2 },
-    { type:"text", q:"Pregunta 10", answerText:["respuesta"] },
-    { type:"mc", q:"Pregunta 11", options:["A","B","C"], answerIndex:0 },
-    { type:"text", q:"Pregunta 12", answerText:["respuesta"] },
-    { type:"mc", q:"Pregunta 13", options:["A","B","C"], answerIndex:1 },
-    { type:"mc", q:"Pregunta 14", options:["A","B","C"], answerIndex:2 },
-    { type:"text", q:"Pregunta 15", answerText:["respuesta"] }
+    { type: "text", q: "1. Vamos a empezar fácil: ¿Cómo se llama tu padrino-tío? \"El nombre completo\"...", answerText: ["Gabriel Alexander Celis Morales"] },
+    { type: "text", q: "2. ¿Cuántos años tiene tu padrino-tío a hoy antes de noviembre del 2025? \"Solo pon el número\"...", answerText: ["35"] },
+    { type: "text", q: "3. ¿Cuántos tíos tienes en total? (Cuenta todos los hermanos de los papás) — SOLO EL NÚMERO", answerText: ["5"] },
+    { type: "text", q: "4. ¿Dónde vive tu Tío Alex? \"País y Pueblo\" — Escribe primero el país, coma, y luego el pueblo", answerText: ["España, Prado del Rey"] },
+    { type: "text", q: "5. ¿Cómo se llama la esposa de tu tío Alex? — Nombres y apellidos", answerText: ["Maria del Pilar Garavito Bautista","María del Pilar Garavito Bautista"] },
+    { type: "text", q: "6. ¿Cuáles son los nombres de tus primos? — Solo el primer nombre de cada uno, separado por comas. \"Primero las damas\"", answerText: ["Abby, Alejandro"] },
+    { type: "text", q: "7. ¿Cuándo es el cumpleaños de tu padrino? — Escribe la fecha dd/mm/aaaa", answerText: ["10/11/1989"] },
+    { type: "text", q: "8. ¿Cómo es el nombre completo de tu Abuelo Celis?", answerText: ["Luis Alberto Celis Olarte"] },
+    { type: "text", q: "9. ¿En dónde hiciste tu vuelo en parapente? — ¿Cómo se llama el pueblo?", answerText: ["Sopo","Sopó"] },
+    { type: "text", q: "10. ¿Cómo es el nombre completo de tu Abuela Morales?", answerText: ["Rosa Emilse Morales Giraldo"] },
+    { type: "text", q: "11. ¿Cuándo fue la última vez que tu tío fue a Colombia a visitarlos? — Pon solo mes y año mm/aaaa", answerText: ["10/2024"] },
+    { type: "text", q: "12. ¿Cuántos años tienen los tíos San y Dani? — Escribe: número, coma, número", answerText: ["31, 31","31,31"] },
+    { type: "text", q: "13. ¿En qué año nació el abuelo Celis? — Solo el año (aaaa)", answerText: ["1959"] },
+    { type: "text", q: "14. ¿Cuál es el primer nombre de tu Tío Santiago? — Tiene 4 letras", answerText: ["Andy"] },
+    { type: "text", q: "15. Piensa en la razón más importante para estar viva, piensa en Aquel que todo lo puede y siempre está contigo… Escríbelo aquí (PISTA: 4 letras)", answerText: ["Dios","DIOS"] }
   ],
+
+  // URLs en modo RAW para que carguen como archivos directos
   prizes: [
-    "premios/nina/1.jpg","premios/nina/2.jpg","premios/nina/3.jpg",
-    "premios/nina/4.jpg","premios/nina/5.jpg"
-  ]
+    { media: [ {type:'image', src:'https://raw.githubusercontent.com/Gaalcemo/ISABELLA-JUEGO-DE-PREGUNTAS/main/IMG_20230805_182026.jpg'} ], caption: "Recuerda que tienes un tío loco que te ama" },
+    { media: [ {type:'image', src:'https://raw.githubusercontent.com/Gaalcemo/ISABELLA-JUEGO-DE-PREGUNTAS/main/IMG_20230805_131736.jpg'} ], caption: "Siempre has sido muy valiente y aventurera" },
+    { media: [ {type:'image', src:'https://raw.githubusercontent.com/Gaalcemo/ISABELLA-JUEGO-DE-PREGUNTAS/main/IMG_20230805_120115.jpg'} ], caption: "Cada momento juntos es grandioso" },
+    { media: [ {type:'image', src:'https://raw.githubusercontent.com/Gaalcemo/ISABELLA-JUEGO-DE-PREGUNTAS/main/IMG_20230805_105531.jpg'} ], caption: "Nunca olvides lo hermoso que es servir a otros" },
+    { media: [ {type:'image', src:'https://raw.githubusercontent.com/Gaalcemo/ISABELLA-JUEGO-DE-PREGUNTAS/main/IMG_20230805_095512.jpg'} ], caption: "Damos amor a otros sin importar cómo sea su aspecto" },
+    { media: [ {type:'image', src:'https://raw.githubusercontent.com/Gaalcemo/ISABELLA-JUEGO-DE-PREGUNTAS/main/IMG_20230805_083430.jpg'} ], caption: "En familia siempre es mejor servir, ¡más fuerza hay!" },
+    { media: [ 
+        {type:'image', src:'https://raw.githubusercontent.com/Gaalcemo/ISABELLA-JUEGO-DE-PREGUNTAS/main/IMG_20230805_131733.jpg'},
+        {type:'image', src:'https://raw.githubusercontent.com/Gaalcemo/ISABELLA-JUEGO-DE-PREGUNTAS/main/FOTO%20MARIPOSA%20PISCINA.jpeg'}
+      ], caption: "¡Siempre sonríele a la vida!" },
+    { media: [ 
+        {type:'image', src:'https://raw.githubusercontent.com/Gaalcemo/ISABELLA-JUEGO-DE-PREGUNTAS/main/FOTO%20REGALO.jpeg'},
+        {type:'image', src:'https://raw.githubusercontent.com/Gaalcemo/ISABELLA-JUEGO-DE-PREGUNTAS/main/FOTO%20COMIDA.jpeg'}
+      ], caption: "Eres consentida por papá Dios" },
+    { media: [ 
+        {type:'image', src:'https://raw.githubusercontent.com/Gaalcemo/ISABELLA-JUEGO-DE-PREGUNTAS/main/FOTO%20PISCINA.jpeg'}
+      ], caption: "Mujercita hermosa" },
+    { media: [ 
+        {type:'image', src:'https://raw.githubusercontent.com/Gaalcemo/ISABELLA-JUEGO-DE-PREGUNTAS/main/FOTO%20NOCHE%20VILLA%20DE%20LEYVA.jpeg'}
+      ], caption: "Caras locas, corazones que saltan de alegría" },
+    { media: [ 
+        {type:'image', src:'https://raw.githubusercontent.com/Gaalcemo/ISABELLA-JUEGO-DE-PREGUNTAS/main/FOTO%20MARIPOSA%20PISCINA%202.jpeg'}
+      ], caption: "Cuida siempre la naturaleza" },
+    { media: [ 
+        {type:'image', src:'https://raw.githubusercontent.com/Gaalcemo/ISABELLA-JUEGO-DE-PREGUNTAS/main/FOTO%20DINOSAURIO.jpeg'},
+        {type:'image', src:'https://raw.githubusercontent.com/Gaalcemo/ISABELLA-JUEGO-DE-PREGUNTAS/main/FOTO%20DESIERTO.jpeg'}
+      ], caption: "Explora y conoce el mundo que Dios nos regaló" },
+    { media: [ 
+        {type:'image', src:'https://raw.githubusercontent.com/Gaalcemo/ISABELLA-JUEGO-DE-PREGUNTAS/main/FOTO%20CON%20GATOS.jpeg'},
+        {type:'image', src:'https://raw.githubusercontent.com/Gaalcemo/ISABELLA-JUEGO-DE-PREGUNTAS/main/FOTO%20CON%20GATOS%202.jpeg'}
+      ], caption: "Vive experiencias únicas con la creación de Dios" },
+    { media: [ 
+        {type:'image', src:'https://raw.githubusercontent.com/Gaalcemo/ISABELLA-JUEGO-DE-PREGUNTAS/main/FOTO%20CON%20FLORES.jpeg'}
+      ], caption: "La belleza y la naturaleza hecha niña y hecha flores" },
+    { media: [ 
+        {type:'video', src:'https://raw.githubusercontent.com/Gaalcemo/ISABELLA-JUEGO-DE-PREGUNTAS/main/VIDEO%20PARAPENTE.mp4'},
+        {type:'video', src:'https://raw.githubusercontent.com/Gaalcemo/ISABELLA-JUEGO-DE-PREGUNTAS/main/VIDEO%20ROLLO%20EN%20PASTO.mp4'},
+        {type:'video', src:'https://raw.githubusercontent.com/Gaalcemo/ISABELLA-JUEGO-DE-PREGUNTAS/main/VIDEO%20SALTARINES.mp4'}
+      ], caption: "Este es el claro ejemplo: eres alegre, feliz y ¡llena de aventuras por vivir!" }
+  ],
+
+  finalMessage: "— GRACIAS POR JUGAR, TE AMO MUCHO \"MI CHIRIPIORCUDA\" — 💖💞💗💝"
 };
 </script>
+
 <script>
-/* === LÓGICA DEL JUEGO === (igual al de Alan) */
+/* ======== LÓGICA ======== */
 const state = { i:0, correctas:0, reveladas:0, total: CONFIG.questions.length };
-const $ = (s)=>document.querySelector(s), $$=(s)=>[...document.querySelectorAll(s)];
-function normalize(s){return(s||'').toString().normalize('NFD').replace(/\p{Diacritic}/gu,'').trim().toLowerCase();}
-function setProgress(){const pct=Math.round(state.i/state.total*100);$('.progress>div').style.width=pct+'%';$('#progreso').textContent=state.i+'/'+state.total;$('#aciertos').textContent=state.correctas;}
-function renderQuestion(){if(state.i>=state.total){endGame();return;}const q=CONFIG.questions[state.i];$('#qtext').textContent=q.q;$('#options').innerHTML='';$('#answerRow').classList.add('hidden');if(q.type==='mc'){q.options.forEach((op,idx)=>{const b=document.createElement('button');b.className='option';b.textContent=op;b.onclick=()=>checkMC(idx);$('#options').appendChild(b);});}else{$('#answerRow').classList.remove('hidden');$('#answer').value='';}}
-function celebrate(){const c=document.createElement('canvas');c.className='confetti';c.width=innerWidth;c.height=200;document.body.appendChild(c);const ctx=c.getContext('2d');const pcs=Array.from({length:120},()=>({x:Math.random()*c.width,y:-20-Math.random()*100,vy:2+Math.random()*3,s:6+Math.random()*6,r:Math.random()*Math.PI,vr:(Math.random()-.5)*0.2}));let t=0;!function tick(){t++;ctx.clearRect(0,0,c.width,c.height);pcs.forEach(p=>{p.y+=p.vy;p.r+=p.vr;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.r);ctx.fillStyle=['#f59e0b','#10b981','#3b82f6','#ef4444','#8b5cf6'][Math.floor(Math.random()*5)];ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s);ctx.restore();});if(t<120)requestAnimationFrame(tick);else c.remove();}();}
-function revealPrize(){if(state.reveladas>=CONFIG.prizes.length)return;const src=CONFIG.prizes[state.reveladas];const f=document.createElement('figure');const i=document.createElement('img');i.src=src;f.appendChild(i);$('#galeria').appendChild(f);state.reveladas++;}
-function next(){state.i++;renderQuestion();setProgress();}
-function checkMC(idx){const q=CONFIG.questions[state.i];const ok=idx===q.answerIndex;if(ok){state.correctas++;revealPrize();celebrate();}next();}
-function checkText(){const q=CONFIG.questions[state.i];const val=normalize($('#answer').value);const ans=Array.isArray(q.answerText)?q.answerText.map(normalize):[normalize(q.answerText)];if(ans.includes(val)){state.correctas++;revealPrize();celebrate();}next();}
-function endGame(){$('.progress>div').style.width='100%';$('#progreso').textContent=state.total+'/'+state.total;$('#qcard').classList.add('hidden');$('#final').classList.remove('hidden');$('#stats').textContent=`Aciertos: ${state.correctas}/${state.total}`;}
-function init(){document.title=CONFIG.title;$('#badge').textContent=CONFIG.badge;$('#pageTitle').textContent=CONFIG.title;document.documentElement.style.setProperty('--accent',CONFIG.accent);renderQuestion();setProgress();}
-window.onload=init;
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+function normalize(s){
+  return (s||'').toString()
+    .normalize('NFD').replace(/\p{Diacritic}/gu,'')
+    .replace(/\s*,\s*/g, ',')   // normaliza comas
+    .trim().toLowerCase();
+}
+
+function setProgress(){
+  const pct = Math.round((state.i) / state.total * 100);
+  $('.progress > div').style.width = pct + '%';
+  $('#progreso').textContent = state.i + '/' + state.total;
+  $('#aciertos').textContent = state.correctas;
+}
+
+function renderQuestion(){
+  if(state.i >= state.total){ endGame(); return; }
+  const q = CONFIG.questions[state.i];
+  $('#qtext').textContent = q.q;
+  $('#options').innerHTML = '';
+  $('#answerRow').classList.add('hidden');
+  if(q.type === 'mc'){
+    q.options.forEach((op,idx)=>{
+      const btn = document.createElement('button');
+      btn.className = 'option';
+      btn.textContent = op;
+      btn.addEventListener('click', ()=> checkMC(idx));
+      $('#options').appendChild(btn);
+    });
+  }else{
+    $('#answerRow').classList.remove('hidden');
+    $('#answer').value='';
+    $('#answer').focus();
+  }
+  setProgress();
+}
+
+function celebrate(){
+  const c = document.createElement('canvas');
+  c.className = 'confetti';
+  c.width = window.innerWidth; c.height = 200;
+  document.body.appendChild(c);
+  const ctx = c.getContext('2d');
+  const pieces = Array.from({length: 120}, ()=> ({
+     x: Math.random()*c.width, y: -20 - Math.random()*100,
+     vy: 2+Math.random()*3, size: 6+Math.random()*6,
+     rot: Math.random()*Math.PI, vr: (Math.random()-.5)*0.2
+  }));
+  let t = 0;
+  (function tick(){
+    t++;
+    ctx.clearRect(0,0,c.width,c.height);
+    pieces.forEach(p=>{
+      p.y += p.vy; p.rot += p.vr;
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+      ctx.fillStyle = ['#f59e0b','#10b981','#3b82f6','#ef4444','#8b5cf6'][Math.floor(Math.random()*5)];
+      ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size);
+      ctx.restore();
+    });
+    if(t<120) requestAnimationFrame(tick); else c.remove();
+  })();
+}
+
+function addMediaToGallery(item){
+  // item: { media: [{type:'image'|'video', src:'...'}...], caption: '...' }
+  item.media.forEach(m=>{
+    const fig = document.createElement('figure');
+    if(m.type === 'video'){
+      const vid = document.createElement('video');
+      vid.src = m.src;
+      vid.controls = true;
+      vid.preload = 'metadata';
+      fig.appendChild(vid);
+    }else{
+      const img = document.createElement('img');
+      img.src = m.src;
+      img.alt = item.caption || 'Premio';
+      fig.appendChild(img);
+    }
+    const cap = document.createElement('figcaption');
+    cap.textContent = item.caption || '¡Premio desbloqueado!';
+    fig.appendChild(cap);
+    $('#galeria').appendChild(fig);
+  });
+}
+
+function revealPrize(){
+  if(state.reveladas >= CONFIG.prizes.length) return;
+  const prize = CONFIG.prizes[state.reveladas];
+  addMediaToGallery(prize);
+  state.reveladas++;
+}
+
+function nextQuestion(){
+  state.i++;
+  renderQuestion();
+}
+
+function checkMC(idx){
+  const q = CONFIG.questions[state.i];
+  const ok = idx === q.answerIndex;
+  feedback(ok);
+}
+
+function checkText(){
+  const q = CONFIG.questions[state.i];
+  const val = normalize($('#answer').value);
+  const ans = Array.isArray(q.answerText) ? q.answerText.map(normalize) : [normalize(q.answerText)];
+  const ok = ans.includes(val);
+  feedback(ok);
+}
+
+function feedback(ok){
+  if(ok){
+    state.correctas++;
+    revealPrize();
+    celebrate();
+    $('#feedback').textContent = '¡Correcto! 🎉';
+    $('#feedback').style.color = 'var(--good)';
+  }else{
+    $('#feedback').textContent = '¡Casi! Vamos a la siguiente, tú puedes.';
+    $('#feedback').style.color = 'var(--bad)';
+  }
+  setProgress();
+  setTimeout(nextQuestion, 900);
+}
+
+function endGame(){
+  $('.progress > div').style.width = '100%';
+  $('#progreso').textContent = state.total + '/' + state.total;
+  $('#qcard').classList.add('hidden');
+  $('#final').classList.remove('hidden');
+  $('#stats').textContent = `Aciertos: ${state.correctas} / ${state.total}`;
+  $('#finalMsg').textContent = CONFIG.finalMessage || '¡Álbum desbloqueado!';
+}
+
+function init(){
+  document.title = CONFIG.title;
+  $('#badge').textContent = CONFIG.badge;
+  $('#pageTitle').textContent = CONFIG.title;
+  document.documentElement.style.setProperty('--accent', CONFIG.accent);
+  renderQuestion();
+}
+
+window.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>

@@ -27,7 +27,7 @@ html,body{margin:0;padding:0;font-family:ui-rounded, system-ui, -apple-system, S
 .progress > div{height:100%;background:var(--accent);width:0%;transition:width .35s ease}
 .q{font-size:20px;margin:0}
 .options{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}
-button.option{padding:12px 14px;border:2px solid #e5e7eb;background:white;border-radius:14px;font-size:16px;text-align:left;cursor:pointer;transition:.2s}
+button.option{padding:12px 14px;border:2px solid #e5e7eb;background:white;border-radius:14px;font-size:16px;text-align:left;cursor:pointer;transition:.15s}
 button.option:hover{transform:translateY(-1px)}
 button.option.correct{border-color:var(--good);outline:3px solid rgba(22,163,74,.2)}
 button.option.wrong{border-color:var(--bad);outline:3px solid rgba(220,38,38,.2)}
@@ -72,7 +72,7 @@ button.option.wrong{border-color:var(--bad);outline:3px solid rgba(220,38,38,.2)
         </div>
       </div>
 
-      <p id="feedback" class="small"></p>
+      <p id="feedback" class="small" aria-live="polite"></p>
       <div class="controls hidden" id="nextRow">
         <button id="nextBtn" class="btn" onclick="nextQuestion()">Siguiente ➡️</button>
       </div>
@@ -87,6 +87,7 @@ button.option.wrong{border-color:var(--bad);outline:3px solid rgba(220,38,38,.2)
     <div id="final" class="card hidden">
       <h2 id="finalMsg">¡Álbum desbloqueado!</h2>
       <p id="stats" class="small"></p>
+      <div id="finalExtra"></div>
       <button class="btn" onclick="location.reload()">Jugar de nuevo</button>
     </div>
 
@@ -98,8 +99,8 @@ button.option.wrong{border-color:var(--bad);outline:3px solid rgba(220,38,38,.2)
 <script>
 /* ======== CONFIGURACIÓN =========
    Tipos de pregunta: 
-   { type:'text', q:'...', answerText:['respuesta1','respuesta2'] }  // no sensible a mayúsculas/acentos
-   También soporta 'mc' con opciones si quisieras mezclar.
+   { type:'text', q:'...', answerText:['respuesta1','respuesta2'] }  // sin acentos/mayúsculas
+   (Opcional) { type:'mc', q:'...', options:['A','B','C'], answerIndex:1 }
    Cada premio puede tener varias imágenes y/o videos:
    { media: [ {type:'image'|'video', src:'...'}, ... ], caption:'mensaje' }
 */
@@ -168,7 +169,8 @@ const CONFIG = {
       ], caption: "Este es el claro ejemplo: eres alegre, feliz y ¡llena de aventuras por vivir!" }
   ],
 
-  finalMessage: "— GRACIAS POR JUGAR, TE AMO MUCHO \"MI CHIRIPIORCUDA\" — 💖💞💗💝"
+  finalMessage: "— GRACIAS POR JUGAR, TE AMO MUCHO \"MI CHIRIPIORCUDA\" — 💖💞💗💝",
+  finalVideo: "https://raw.githubusercontent.com/Gaalcemo/ISABELLA-JUEGO-DE-PREGUNTAS/main/Video%20de%20WhatsApp%202025-08-27%20a%20las%2019.48.36_921daae7.mp4"
 };
 </script>
 
@@ -199,14 +201,14 @@ function renderQuestion(){
   $('#options').innerHTML = '';
   $('#answerRow').classList.add('hidden');
   $('#feedback').textContent = '';
-  $('#nextRow').classList.add('hidden');
+  $('#nextRow').classList.add('hidden'); // SIEMPRE oculto al renderizar
 
   if(q.type === 'mc'){
     q.options.forEach((op,idx)=>{
       const btn = document.createElement('button');
       btn.className = 'option';
       btn.textContent = op;
-      btn.addEventListener('click', ()=> checkMC(idx));
+      btn.addEventListener('click', ()=> checkMC(btn, idx));
       $('#options').appendChild(btn);
     });
   }else{
@@ -273,33 +275,45 @@ function revealPrize(){
   state.reveladas++;
 }
 
-function checkMC(idx){
+/* === Respuesta de opción múltiple: marcar correcto/incorrecto y permitir reintentar === */
+function checkMC(btn, idx){
   const q = CONFIG.questions[state.i];
   const ok = idx === q.answerIndex;
-  feedback(ok);
+  if(ok){
+    btn.classList.add('correct');
+    handleCorrect();
+  }else{
+    btn.classList.add('wrong');
+    // No mostramos "Siguiente"; puede intentar otra opción
+    $('#feedback').textContent = '¡Casi! Intenta de nuevo.';
+    $('#feedback').style.color = 'var(--bad)';
+  }
 }
 
+/* === Respuesta abierta: permitir reintentos hasta acertar === */
 function checkText(){
   const q = CONFIG.questions[state.i];
   const val = normalize($('#answer').value);
   const ans = Array.isArray(q.answerText) ? q.answerText.map(normalize) : [normalize(q.answerText)];
   const ok = ans.includes(val);
-  feedback(ok);
+  if(ok){
+    handleCorrect();
+  }else{
+    $('#feedback').textContent = 'No es exacto aún, ¡prueba otra vez!';
+    $('#feedback').style.color = 'var(--bad)';
+    $('#answer').focus();
+  }
 }
 
-function feedback(ok){
-  if(ok){
-    state.correctas++;
-    revealPrize();
-    celebrate();
-    $('#feedback').textContent = '¡Correcto! 🎉';
-    $('#feedback').style.color = 'var(--good)';
-  }else{
-    $('#feedback').textContent = '¡Casi! Vamos a la siguiente, tú puedes.';
-    $('#feedback').style.color = 'var(--bad)';
-  }
+/* === Al acertar: premia, confeti, muestra botón "Siguiente" === */
+function handleCorrect(){
+  state.correctas++;
+  revealPrize();
+  celebrate();
+  $('#feedback').textContent = '¡Correcto! 🎉';
+  $('#feedback').style.color = 'var(--good)';
   setProgress();
-  // Avanza solo cuando el usuario pulse "Siguiente"
+  // Mostrar "Siguiente" SOLO cuando acierta
   document.getElementById('nextRow').classList.remove('hidden');
 }
 
@@ -315,6 +329,16 @@ function endGame(){
   $('#final').classList.remove('hidden');
   $('#stats').textContent = `Aciertos: ${state.correctas} / ${state.total}`;
   $('#finalMsg').textContent = CONFIG.finalMessage || '¡Álbum desbloqueado!';
+
+  if(CONFIG.finalVideo){
+    const v = document.createElement('video');
+    v.src = CONFIG.finalVideo;
+    v.controls = true;
+    v.autoplay = true;
+    v.style.width = '100%';
+    v.style.marginTop = '12px';
+    document.getElementById('finalExtra').appendChild(v);
+  }
 }
 
 function init(){
